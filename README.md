@@ -1,51 +1,109 @@
-Description
------------
+# Overview
 
-[Polyglot for Tesla](http://github.com/tesla-polyglot/) is an experimental distribution of Maven that allows the expression of a POM in something other than XML (oh nooooo!). A couple of the dialects also have the capability to write plugins inline: the Groovy and Ruby dialects allow this.
+[Polyglot for Maven](http://github.com/tesla/tesla-polyglot/) is a set of extensions for `Maven 3.3.1+` that allows the POM model to be written in dialects other than XML. Several of the dialects also allow inlined plugins: the Ruby, Groovy and Scala dialects allow this.
 
-License
--------
+Here's an example POM written in the Ruby dialect:
 
-[EPL 1.0](http://www.eclipse.org/legal/epl-v10.html)
+```ruby
+project 'Polyglot :: Aggregator' do
 
-Support
--------
+  model_version '4.0.0'
+  id 'io.tesla.polyglot:tesla-polyglot:0.0.1-SNAPSHOT'
+  inherit 'io.tesla:tesla:4'
+  packaging 'pom'
 
-To submit an issue, please use [Github Issues](https://github.com/tesla/tesla-polyglot/issues).
+  properties( 'sisuInjectVersion' => '0.0.0.M2a',
+              'teslaVersion' => '3.1.0' )
 
-Building
---------
+  modules [ 'tesla-polyglot-common',
+            'tesla-polyglot-atom',
+            'tesla-polyglot-ruby',
+            'tesla-polyglot-groovy',
+            'tesla-polyglot-yaml',
+            'tesla-polyglot-clojure',
+            'tesla-polyglot-scala',
+            'tesla-polyglot-cli',
+            'tesla-polyglot-maven-plugin' ]
+
+  overrides do
+    jar 'org.eclipse.sisu:org.eclipse.sisu.inject:${sisuInjectVersion}'
+    jar 'org.eclipse.sisu:org.eclipse.sisu.plexus:${sisuInjectVersion}'
+    jar 'org.apache.maven:maven-model-builder:3.1.0'
+    jar 'org.apache.maven:maven-embedder:3.1.0'
+    jar( 'junit:junit:4.11', :scope => 'test' )
+
+  end
+
+  plugin 'org.codehaus.plexus:plexus-component-metadata:1.5.4' do
+    execute_goals 'generate-metadata', 'generate-test-metadata'
+  end
+
+  build do
+    execute("first", :validate) do |context|
+      puts "Hello from JRuby!"
+    end
+  end
+end
+```
+
+# Building
 
 ### Requirements
 
-* [Maven](http://maven.apache.org) 3.1.0+
-* [Java](http://java.sun.com/) 6+
+* [Maven](http://maven.apache.org) 3.3.1+
+* [Java](http://java.sun.com/) 7+
 
-Check-out and build:
+# Configuration
 
-    git clone git@github.com:tesla/tesla-polyglot.git
-    cd tesla-polyglot
-    mvn install
+To use Polyglot for Maven you need to edit 
+`${maven.multiModuleProjectDirectory}/.mvn/extensions.xml` 
+and add the appropriate language extension.
 
-After this completes, you can unzip and play with polyglot for maven:
+## Available Languages
 
-    tar -xzvf tesla-polyglot-cli/target/tesla-polyglot-*-bin.tar.gz
-    ./tesla-polyglot-*/bin/mvn
+The available languages, in alphabetical order, with their artifact id are:
 
-Polyglot for Maven includes a copy of maven 3.1.0, which isn't 100% backwards compatible
-with maven 2.0. Specifically, some maven plugins might not work. The Tesla Polyglot distribution is just
-like a normal Maven distribution and can be used like one.
+| Language | Artifact Id        |
+|:--------:|:------------------:|
+| Atom     | `polyglot-atom`    |
+| Groovy   | `polyglot-groovy`  |
+| Clojure  | `polyglot-clojure` |
+| Ruby     | `polyglot-ruby`    |
+| Scala    | `polyglot-scala`   |
+| YAML     | `polyglot-yaml`    |
 
-There is a translate command that will translate between a `pom.xml` and the other supported dialects. For example:
+## Update extensions.xml
+
+Edit the `extensions.xml` file and add the following, replacing ARTIFACTID with
+the artifact id for your chosen language.
 
 ```
-translate pom.xml pom.rb
+<?xml version="1.0" encoding="UTF-8"?>
+<extensions>
+  <extension>
+    <groupId>io.takari.polyglot</groupId>
+    <artifactId>ARTIFACTID</artifactId>
+    <version>0.1.10</version>
+  </extension>
+</extensions>
 ```
 
-or
+## Convert existing POM
+
+We have created a simple Maven Plugin that will help you convert any existing 
+`pom.xml` files:
 
 ```
-translate pom.xml pom.groovy
+mvn io.takari.polyglot:polyglot-translate-plugin:translate \
+  -Dinput=pom.xml -Doutput=pom.{format}
 ```
 
-The rules about precedence of which format to be read, and what should happen when there are mixed flavors of POMs have yet to be fully worked out. Also note that the whole interoperability story has not been worked out. A pom.xml will currently not be installed or deployed so use this at your own risk. It's fully functional but interoperability is not a priority right now. Getting out a minimal viable product (MVP) is in order to get feedback is.
+Where the supported formats are `rb`, `groovy`, `scala`, `yaml`, `atom` and of course `xml`.
+See [here](http://takari.io/2015/03/21/polyglot-maven.html) for more info.
+You can even convert back to `xml` or cross-convert between all supported formats.
+
+# Note of caution
+
+The whole interoperability story has not been worked out but we expect to sort this out very quickly now that Polyglot for Maven can be used easily.
+
+A `pom.xml` will currently not be installed or deployed except for the Ruby DSL but we will add this feature very shortly.

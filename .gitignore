@@ -7,8 +7,7 @@
 .DS_Store
 log/
 target/
-.tesla.pom.xml
-tesla-polyglot-*-SNAPSHOT/
+bin/
 .cache
 release.properties
 pom.xml.releaseBackup
