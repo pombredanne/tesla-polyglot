@@ -36,38 +36,41 @@ import org.sonatype.maven.polyglot.execute.ExecuteManagerImpl;
 import org.sonatype.maven.polyglot.mapping.Mapping;
 
 public abstract class AbstractInjectedTestCase extends InjectedTestCase {
-    
-	@Inject
-	@Named("${basedir}/target/rubygems-provided/gems")
-	protected File gems;
+
+    private final String VERSION_PATTERN = Constants.getVersion().replaceAll("^.+\\.|-SNAPSHOT$", "");
+
+    @Inject
+    @Named("${basedir}/target/rubygems-provided/gems")
+    protected File gems;
 
     @Inject
     @Named("${basedir}/src/test/poms")
     protected File poms;
 
-	private File specs; 
-	private File specs()
+    private File specs; 
+    private File specs()
+    {
+	if( specs == null)
 	{
-	    if( specs == null)
-	    {
-	        File mavenTools = gems.listFiles( new FileFilter() {
-        
-                @Override
+	    File mavenTools = gems.listFiles( new FileFilter() {
+		@Override
                 public boolean accept( File f )
                 {
                     return f.getName().startsWith( "maven-tools-" );
                 }
-            } )[ 0 ];
-	        specs = new File( mavenTools, "spec" );
-	    }
-	    return specs;
+	    } )[ 0 ];
+	    specs = new File( mavenTools, "spec" );
 	}
+	return specs;
+    }
 	
-    protected void assertModels( String pomRuby, boolean debug ) throws Exception {
+    protected void assertModels( String pomRuby, boolean debug ) throws Exception
+    {
                 
         File dir = new File( specs(), pomRuby ).getParentFile();
         File pom = new File( dir, "pom.xml" );
-        if( !pom.exists() ){
+        if( !pom.exists() )
+	{
             pom = new File( dir.getParentFile(), "pom.xml" );
         }
 
@@ -143,7 +146,10 @@ public abstract class AbstractInjectedTestCase extends InjectedTestCase {
             }
         };
 		rubyModelReader.setupManager = new SetupClassRealm();
-		
+            if ( debug )
+            {
+                System.out.println(w.toString());
+            }
 	    StringReader reader = new StringReader( w.toString() );
 	    Model rubyModel = rubyModelReader.read( reader, new HashMap<String, Object>() );
 	    
@@ -158,7 +164,7 @@ public abstract class AbstractInjectedTestCase extends InjectedTestCase {
 	private void assertModels( Model xmlModel, Model rubyModel, boolean debug )
 			throws IOException
 	{
-		MavenXpp3Writer xmlWriter = new MavenXpp3Writer();
+	    MavenXpp3Writer xmlWriter = new MavenXpp3Writer();
 	    StringWriter ruby = new StringWriter();
 	    xmlWriter.write(ruby, rubyModel);
 	    StringWriter xml = new StringWriter();
@@ -168,32 +174,38 @@ public abstract class AbstractInjectedTestCase extends InjectedTestCase {
 	    {
 	    	// Let's take a look at see what's there
 	    	System.out.println(xml.toString());
-            System.out.println(ruby.toString());
+		System.out.println(ruby.toString());
 	    }
 	    
 	    assertEquals( simplify( xml, debug ), simplify( ruby, debug ) );
 	}
-	
+
 	private String simplify( StringWriter xml, boolean debug )
 	{
-		String x = xml.toString()
-		        // no whitespace
-		        .replaceAll( "\\s", "")
-		        // no process instructions
-		        .replaceFirst("<\\?.*\\?>", "")
-		        // properties have different ordering
-		        .replaceAll("<properties>.*?</properties>", "")
+	    String x = xml.toString()
+		// no whitespace
+		.replaceAll( "\\s", "")
+		// no process instructions
+		.replaceFirst("<\\?.*\\?>", "")
+		// properties have different ordering
+		.replaceAll("<properties>.*?</properties>", "")
                 // allow old style plugin definition to match new one
                 .replaceAll("\\$\\{tesla.version\\}", Constants.getVersion())
                 // the test cases still use the old groupIds and artifactIds
                 .replaceAll("io.tesla.polyglot", "io.takari.polyglot")
                 .replaceAll("tesla-polyglot", "polyglot")
+		// for the pom_with_execute test
+		// hardcoded version from maven-tools, could change more versions then
+                // the one from this plugin
+                .replaceAll("[0-9]+(-SNAPSHOT)?", VERSION_PATTERN)
+		// fix absolute path for test_pom_from_jarfile
+		.replaceAll("..basedir./myfirst.jar", "uri:classloader://myfirst.jar")
                 // some of the configuration tags are empty - unify them
-                .replaceAll( "></(arg|chmod)>", "/>" );
-        if ( debug )
-        {
-            System.out.println(x);
-        }
-		return x;
+                .replaceAll("></(arg|chmod)>", "/>");
+	     if ( debug )
+	     {
+		 System.out.println(x);
+	     }
+	     return x;
 	}	
 }

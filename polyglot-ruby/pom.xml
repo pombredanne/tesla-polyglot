@@ -15,7 +15,7 @@
   <parent>
     <groupId>io.takari.polyglot</groupId>
     <artifactId>polyglot</artifactId>
-    <version>0.1.13-SNAPSHOT</version>
+    <version>0.1.19-SNAPSHOT</version>
   </parent>
 
   <artifactId>polyglot-ruby</artifactId>
@@ -25,11 +25,11 @@
     <dependency>
       <groupId>io.takari.polyglot</groupId>
       <artifactId>polyglot-common</artifactId>
-    </dependency>    
+    </dependency>
     <dependency>
       <groupId>org.jruby</groupId>
-      <artifactId>jruby-noasm</artifactId>
-      <version>1.7.20</version>
+      <artifactId>jruby</artifactId>
+      <version>9.1.2.0</version>
       <type>pom</type>
     </dependency>
     <!-- Test -->
@@ -42,10 +42,17 @@
   </dependencies>
 
   <properties>
-    <maven-tools.version>1.0.11</maven-tools.version>
+    <mavengem-wagon.version>0.2.1</mavengem-wagon.version>
   </properties>
 
   <build>
+    <extensions>
+      <extension>
+        <groupId>org.torquebox.mojo</groupId>
+        <artifactId>mavengem-wagon</artifactId>
+        <version>${mavengem-wagon.version}</version>
+      </extension>
+    </extensions>
     <plugins>
       <plugin>
         <artifactId>maven-invoker-plugin</artifactId>
@@ -120,9 +127,9 @@
       </activation>
 
       <repositories>
-        <repository>
-          <id>rubygems-releases</id>
-          <url>http://rubygems-proxy.torquebox.org/releases</url>
+	<repository>
+	  <id>mavengems</id>
+	  <url>mavengem:https://rubygems.org</url>
         </repository>
       </repositories>
       
@@ -130,14 +137,14 @@
         <dependency>
           <groupId>rubygems</groupId>
           <artifactId>maven-tools</artifactId>
-          <version>${maven-tools.version}</version>
+          <version>1.1.6</version>
           <type>gem</type>
           <scope>provided</scope>
         </dependency>
       </dependencies>
 
       <properties>
-        <jruby.plugins.version>1.0.8</jruby.plugins.version>
+        <jruby.plugins.version>1.1.5</jruby.plugins.version>
       </properties>
 
       <build>
